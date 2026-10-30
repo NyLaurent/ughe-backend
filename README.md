@@ -1,29 +1,29 @@
 # UGHE Test Web App — Backend
 
-The Django and Django REST Framework backend provides the public homepage API
-and content management through Django Admin. PostgreSQL stores the site's
-settings, navigation links, carousel slides, and facts/statistics.
+Django REST Framework API and Django Admin for the UGHE homepage. PostgreSQL
+stores editable site settings, navigation, carousel slides, and statistics.
 
 ## Repositories
 
 - **Backend:** [NyLaurent/ughe-backend](https://github.com/NyLaurent/ughe-backend)
 - **Frontend:** [NyLaurent/ughe-frontend](https://github.com/NyLaurent/ughe-frontend)
 
-The complete Docker setup needs both repositories cloned as sibling folders
-named `backend` and `frontend`.
+The full Docker setup requires both repositories as sibling folders named
+`backend` and `frontend`.
 
 ## Run the full app with Docker (recommended)
 
 ### Requirements
 
-- Git
-- Docker Desktop running with Linux containers
-- Internet access for first-time Docker builds
-- Ports `3000` and `8000` available
+Git, Docker Desktop/Engine with Compose, internet access for the first build,
+and ports `3000` and `8000` available.
 
-### Clone both repositories
+### 1. Clone both repositories
 
-In Windows PowerShell:
+Run the matching block from the parent directory where you want the project:
+
+<details>
+<summary><strong>Windows PowerShell</strong></summary>
 
 ```powershell
 New-Item -ItemType Directory -Force ughe-test-web-app
@@ -33,111 +33,207 @@ git clone https://github.com/NyLaurent/ughe-backend.git backend
 Set-Location backend
 ```
 
-The sibling folder names matter because each repository's Compose file builds
-the other repository using a relative path.
+</details>
 
-### Configure and start
+<details>
+<summary><strong>Windows Command Prompt (CMD)</strong></summary>
 
-Copy the included sample environment file to the shared parent directory:
+```bat
+mkdir ughe-test-web-app
+cd /d ughe-test-web-app
+git clone https://github.com/NyLaurent/ughe-frontend.git frontend
+git clone https://github.com/NyLaurent/ughe-backend.git backend
+cd backend
+```
+
+</details>
+
+<details>
+<summary><strong>macOS / Linux (Bash or Zsh)</strong></summary>
+
+```bash
+mkdir -p ughe-test-web-app
+cd ughe-test-web-app
+git clone https://github.com/NyLaurent/ughe-frontend.git frontend
+git clone https://github.com/NyLaurent/ughe-backend.git backend
+cd backend
+```
+
+</details>
+
+The sibling folder names matter: the Compose file builds this backend and the
+frontend from their relative paths.
+
+### 2. Create the shared `.env` and start Docker
+
+Run from the `backend` folder. If the parent `.env` already exists, keep it
+and check that its database credentials match the PostgreSQL volume.
+
+<details>
+<summary><strong>Windows PowerShell</strong></summary>
 
 ```powershell
 Copy-Item .env.example ..\.env
-```
-
-If `..\.env` already exists, do not overwrite it. Check its PostgreSQL
-username and password against the database volume you plan to use. Start the
-services from this backend folder:
-
-```powershell
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env up --build -d
 ```
 
-Docker starts PostgreSQL, waits for it to be healthy, applies Django
-migrations, creates the first admin user, seeds starter content into empty
-tables, then starts the API and frontend.
+</details>
+
+<details>
+<summary><strong>Windows Command Prompt (CMD)</strong></summary>
+
+```bat
+copy .env.example ..\.env
+docker compose -p ughe -f docker-compose.yml --env-file ..\.env up --build -d
+```
+
+</details>
+
+<details>
+<summary><strong>macOS / Linux (Bash or Zsh)</strong></summary>
+
+```bash
+cp .env.example ../.env
+docker compose -p ughe -f docker-compose.yml --env-file ../.env up --build -d
+```
+
+</details>
+
+Skip the copy command when `.env` already exists. On first startup, Docker
+starts PostgreSQL, Django applies migrations and seeds empty content tables,
+then the API and frontend start.
 
 | What | URL |
 | --- | --- |
 | Django Admin | [http://localhost:8000/admin/](http://localhost:8000/admin/) |
-| Public homepage API | [http://localhost:8000/api/home/](http://localhost:8000/api/home/) |
+| Homepage API | [http://localhost:8000/api/home/](http://localhost:8000/api/home/) |
 | Next.js homepage | [http://localhost:3000](http://localhost:3000) |
 
-## Local sample credentials
+### Local sample credentials
 
-These `.env.example` defaults are for local testing:
+The sample values are for local testing. The shared parent `.env` contains the
+settings Docker actually uses.
 
-- **Django Admin:** username `ughe-admin`, password `UGHE-Local-Only-2026!`
-- **PostgreSQL:** database `ughe`, username `postgres`, sample password
+- **Django Admin:** `ughe-admin` / `UGHE-Local-Only-2026!`
+- **PostgreSQL:** database `ughe`, user `postgres`, sample password
   `ughe-local-only-password`
 
-The database and admin credentials are separate. Read the shared parent
-`.env` to see the values being used. Existing PostgreSQL volumes keep the
-credentials from their initial setup; changing env variables alone will not
-change the PostgreSQL role. The admin bootstrap creates a user once and does
-not reset its password on subsequent starts.
+These are separate accounts. PostgreSQL does not change credentials on an
+existing data volume when `.env` changes. The admin bootstrap creates a user
+once and does not reset its password on subsequent starts.
 
-Reset an existing admin password with:
+### Useful Docker commands
 
-```powershell
-docker compose -p ughe -f docker-compose.yml --env-file ..\.env exec backend python manage.py changepassword ughe-admin
-```
+Run from this repository's `backend` folder:
 
-## Run tests and inspect services
-
-Run from this backend folder:
+<details>
+<summary><strong>PowerShell / Command Prompt</strong></summary>
 
 ```powershell
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env ps
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env logs -f
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env exec backend python manage.py check
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env exec backend python manage.py test
-```
-
-Stop the stack without deleting data:
-
-```powershell
 docker compose -p ughe -f docker-compose.yml --env-file ..\.env down
 ```
 
-Avoid `down -v` unless you intend to delete the database and uploaded media.
+</details>
 
-## Local Python development without Docker
+<details>
+<summary><strong>macOS / Linux (Bash or Zsh)</strong></summary>
 
-Requires Python and a configured local database. With `POSTGRES_DB` unset,
-Django uses SQLite. From this repository folder:
+```bash
+docker compose -p ughe -f docker-compose.yml --env-file ../.env ps
+docker compose -p ughe -f docker-compose.yml --env-file ../.env logs -f
+docker compose -p ughe -f docker-compose.yml --env-file ../.env exec backend python manage.py check
+docker compose -p ughe -f docker-compose.yml --env-file ../.env exec backend python manage.py test
+docker compose -p ughe -f docker-compose.yml --env-file ../.env down
+```
+
+</details>
+
+`down` preserves data. `down -v` deletes the database and uploaded-media
+volumes.
+
+## Local Python development (without Docker)
+
+Requires Python and a configured local database. If `POSTGRES_DB` is unset,
+Django uses SQLite. Run from this repository's directory.
+
+<details>
+<summary><strong>Windows PowerShell</strong></summary>
 
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+$env:UGHE_ADMIN_USERNAME = "ughe-admin"
+$env:UGHE_ADMIN_PASSWORD = "UGHE-Local-Only-2026!"
 python manage.py migrate
 python manage.py test
-```
-
-Set `UGHE_ADMIN_USERNAME` and `UGHE_ADMIN_PASSWORD`, then start a local admin,
-seed initial content, and run Django:
-
-```powershell
 python manage.py ensure_admin
 python manage.py seed_demo
 python manage.py runserver
 ```
 
-The local API is at [http://localhost:8000/api/home/](http://localhost:8000/api/home/)
-and the local admin is at [http://localhost:8000/admin/](http://localhost:8000/admin/).
+</details>
+
+<details>
+<summary><strong>Windows Command Prompt (CMD)</strong></summary>
+
+```bat
+python -m venv venv
+venv\Scripts\activate.bat
+pip install -r requirements.txt
+set UGHE_ADMIN_USERNAME=ughe-admin
+set UGHE_ADMIN_PASSWORD=UGHE-Local-Only-2026!
+python manage.py migrate
+python manage.py test
+python manage.py ensure_admin
+python manage.py seed_demo
+python manage.py runserver
+```
+
+</details>
+
+<details>
+<summary><strong>macOS / Linux (Bash or Zsh)</strong></summary>
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+export UGHE_ADMIN_USERNAME=ughe-admin
+export UGHE_ADMIN_PASSWORD='UGHE-Local-Only-2026!'
+python manage.py migrate
+python manage.py test
+python manage.py ensure_admin
+python manage.py seed_demo
+python manage.py runserver
+```
+
+</details>
+
+The commands above use local-only sample admin credentials. Change them for
+your own local environment if needed. Local API and admin URLs are
+[http://localhost:8000/api/home/](http://localhost:8000/api/home/) and
+[http://localhost:8000/admin/](http://localhost:8000/admin/).
 
 ## Django Admin content
 
-- **Site settings:** site name and logo; facts section eyebrow and heading.
+- **Site settings:** site name and logo; facts eyebrow and heading.
 - **Navigation items:** header and primary links, order, active state, dropdown
   indicator, search button, and staff login action.
-- **Slides:** captions, button, order, active state, and uploaded image or video.
-  Supported image formats: JPG/JPEG, PNG, GIF, WebP. Supported video formats:
-  MP4, WebM, Ogg/OGV.
-- **Facts and statistics:** displayed value, description, sort order, visibility.
+- **Slides:** caption, button, order, active state, and uploaded image or video.
+  Supported images: JPG/JPEG, PNG, GIF, WebP. Supported videos: MP4, WebM,
+  Ogg/OGV.
+- **Facts and statistics:** displayed value, description, order, and visibility.
 
 The public API returns active content only. Uploaded media persists in the
 Docker `media_data` volume.
+
+For frontend-specific details, see the
+[frontend repository guide](https://github.com/NyLaurent/ughe-frontend#readme).
 
 ## Security
 
